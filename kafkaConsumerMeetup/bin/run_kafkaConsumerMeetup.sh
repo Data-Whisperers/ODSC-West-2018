@@ -1,5 +1,5 @@
 #!/bin/bash
-#* Copyright 2015 Silicon Valley Data Science.
+#* Copyright 2018 Data Whisperers LLC.
 #*
 #* Licensed under the Apache License, Version 2.0 (the "License");
 #* you may not use this file except in compliance with the License.
@@ -13,4 +13,4 @@
 #* See the License for the specific language governing permissions and
 #* limitations under the License.
 #*
-java -jar target/tailer2kafka-1.0-SNAPSHOT.jar --topicname meetupstream --filename /var/tmp/meetupstream --metadatabrokerlist localhost:9092
+java -jar target/kafkaConsumerMeetup-1.0-SNAPSHOT.jar --topicname meetupstream --metadatabrokerlist localhost:9092 --groupid 1
