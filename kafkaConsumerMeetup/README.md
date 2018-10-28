@@ -1,6 +1,7 @@
 # Description
 
-This folder provides an example of consuming the meetup messages sent from tailer2kafka's (https://github.com/steveo-dw/ODSC-West-2018/tree/master/tailer2kafka) demo
+This folder provides an example of consuming the meetup messages sent from tailer2kafka's (https://github.com/steveo-dw/ODSC-West-2018/tree/master/tailer2kafka) demo.
+
 The java project can be easily built with Maven using `mvn install`.
 
 # Prerequisites
