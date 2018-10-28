@@ -41,6 +41,7 @@ public class MeetupConsumer {
 
     /**
      * @param args the command line arguments
+     * @throws org.apache.commons.cli.ParseException
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws ParseException, IOException {
