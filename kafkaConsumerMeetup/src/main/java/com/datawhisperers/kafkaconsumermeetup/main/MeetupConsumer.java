@@ -44,9 +44,7 @@ public class MeetupConsumer {
      * @throws org.apache.commons.cli.ParseException
      * @throws java.io.IOException
      */
-    public static void main(String[] args) throws ParseException, IOException {
-        // TODO code application logic here
-        
+    public static void main(String[] args) throws ParseException, IOException {        
         Options options = new Options();
 
         options.addOption((org.apache.commons.cli.Option.builder(TOPICNAME))
@@ -102,19 +100,14 @@ public class MeetupConsumer {
         consumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Arrays.asList(cmd.getOptionValue(TOPICNAME)));
 
-        // Loop until ctrl + c
         int count = 0;
         Duration timeout = Duration.ofMillis(200);
         while (true) {
-            // Poll for records
             ConsumerRecords<String, String> records = consumer.poll(timeout);
-            // Did we get any?
             if (records.count() == 0) {
                 LOG.info("No Records!!!");
             } else {
-                // Yes, loop over records
                 for (ConsumerRecord<String, String> record : records) {
-                    // Display record and count
                     count += 1;
                     LOG.info(count + ": " + record.value());
                     try {
