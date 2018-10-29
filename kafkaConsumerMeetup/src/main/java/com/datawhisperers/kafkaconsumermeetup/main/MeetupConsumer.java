@@ -16,10 +16,17 @@
 package com.datawhisperers.kafkaconsumermeetup.main;
 
 import com.datawhisperers.kafkaconsumermeetup.pojo.Meetup;
+import com.datawhisperers.kafkaconsumermeetup.pojo.Venue;
+import com.datawhisperers.kafkaconsumermeetup.pojo.CountryVenue;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Properties;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeMap;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -32,19 +39,37 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.LoggerFactory;
 
 public class MeetupConsumer {
-    
+
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(MeetupConsumer.class);
-    
+
     private static final String TOPICNAME = "topicname";
     private static final String GROUPID = "groupid";
     private static final String METADATABROKERLIST = "metadatabrokerlist";
+
+    private CountryVenue countryVenues = new CountryVenue();
+
+    TimerTask task = new TimerTask() {
+        @Override
+        public void run() {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
+            Date dt = new Date();
+            System.out.println(">>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<");
+            System.out.println("Refresh:" + sdf.format(dt));
+            countryVenues.getCountryVenue().keySet().forEach((key) -> {
+                System.out.println("Country key: " + key + " Size: " + countryVenues.getCountryVenue().get(key).size());
+            });
+            dt = new Date();
+            System.out.println("Refreshed:" + sdf.format(dt));
+            System.out.println(">>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<");
+        }
+    };
 
     /**
      * @param args the command line arguments
      * @throws org.apache.commons.cli.ParseException
      * @throws java.io.IOException
      */
-    public static void main(String[] args) throws ParseException, IOException {        
+    public static void main(String[] args) throws ParseException, IOException {
         Options options = new Options();
 
         options.addOption((org.apache.commons.cli.Option.builder(TOPICNAME))
@@ -53,7 +78,7 @@ public class MeetupConsumer {
                 .desc("Kafka topic name")
                 .hasArg()
                 .build());
-        
+
         options.addOption((org.apache.commons.cli.Option.builder(METADATABROKERLIST))
                 .required(true)
                 .longOpt(METADATABROKERLIST)
@@ -84,14 +109,17 @@ public class MeetupConsumer {
         MeetupConsumer meetupConsumer = new MeetupConsumer();
         meetupConsumer.consume(cmd);
     }
-    
+
     public void consume(CommandLine cmd) {
 
+        Timer timer = new Timer();
+        timer.schedule(task, new Date(), 15000);
         KafkaConsumer<String, String> consumer;
 
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", cmd.getOptionValue(METADATABROKERLIST));
         properties.setProperty("group.id", cmd.getOptionValue(GROUPID));
+        properties.setProperty("client.id", "MeetupConsumer");
         properties.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         properties.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -104,23 +132,35 @@ public class MeetupConsumer {
         Duration timeout = Duration.ofMillis(200);
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(timeout);
-            if (records.count() == 0) {
-                LOG.info("No Records!!!");
-            } else {
-                for (ConsumerRecord<String, String> record : records) {
-                    count += 1;
-                    LOG.info(count + ": " + record.value());
-                    try {
-                        Meetup meetup = JsonToMeetup.jsonToMeetup(record.value());
-                        LOG.info(meetup.toString());
-                        
-                    } catch (Exception e) {
-                        LOG.error("<<<<<<<<<<<<<ERROR>>>>>>>>>>>>>>",e);
-
-                    }
-                }
-            }
+            records.forEach(record -> processRecords(record));
         }
+    }
+
+    private void processRecords(ConsumerRecord<String, String> record) {
+        try {
+            Meetup meetup = JsonToMeetup.jsonToMeetup(record.value());
+            LOG.info(meetup.toString());
+            addCountries(countryVenues, meetup.getGroup().getGroup_country(), meetup.getVenue());
+
+        } catch (Exception e) {
+            LOG.error("<<<<<<<<<<<<<ERROR>>>>>>>>>>>>>>");
+            LOG.error("Raw: " + record.value());
+            LOG.error("<<<<<<<<<<<<<ERROR>>>>>>>>>>>>>>", e);
+        }
+
+    }
+
+    private void addCountries(CountryVenue countryVenues, String country, Venue venue) {
+
+        if (!countryVenues.getCountryVenue().containsKey(country)) {
+
+            countryVenues.getCountryVenue().put(country, new TreeMap<>());
+        }
+
+        if (countryVenues.getCountryVenue().containsKey(country)) {
+            countryVenues.getCountryVenue().get(country).put(venue.getVenue_id(), venue);
+        }
+
     }
 
 }

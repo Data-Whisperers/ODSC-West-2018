@@ -21,6 +21,7 @@
     </appender>
    
     <root>
+        <priority value="INFO" />
         <appender-ref ref="async"/>
         <!--<appender-ref ref="console"/>-->
         
